@@ -341,29 +341,42 @@ const P = Object.fromEntries(PEOPLE.map(p=>[p.id,p]));
 const partnerOf = id => PEOPLE.find(p=>p.couple===P[id].couple && p.id!==id);
 
 const EARN = [
-  ["nuit","Nuit de garde complète",3],
-  ["reveil","Réveil nocturne (par réveil)",1],
-  ["biberon4h","Biberon de 4 h du mat",1],
-  ["couche","Couche explosive, niveau Tchernobyl",2],
+  ["nuit","Nuit complète en solo pendant que l'autre ronfle",3],
+  ["nuitPartielle","Nuit partielle : premier quart jusqu'à 3 h",2],
+  ["reveil","Réveil en pleine nuit (par réveil)",1],
+  ["biberon4h","Biberon de nuit, les yeux fermés",1],
+  ["biberon","Biberon de jour",1],
+  ["allaitement","Allaitement, une tétée",1],
+  ["allaitementNuit","Tétée de nuit, au radar",2],
+  ["laverBib","Laver et stériliser les biberons",1],
+  ["couche","Changer une couche",1],
+  ["coucheCata","Couche catastrophe : ça déborde jusqu'à la nuque",3],
+  ["coucheResto","Change de l'extrême, dans les toilettes du resto",2],
+  ["bodies","Sauver les bodies après une catastrophe",2],
+  ["lessive","Gérer tous les bodies : lessive, séchage, pliage",2],
+  ["bain","Donner le bain",1],
   ["dodo","Bain, pyjama et dodo en solo",2],
-  ["matinee","Matinée solo pendant que l'autre dort",3],
-  ["journee","Journée entière en solo",6],
-  ["dents","Crise de dents gérée",2],
-  ["pediatre","Rendez-vous pédiatre ou vaccins",2],
+  ["crecheDepot","Déposer à la crèche (le plus facile, on le sait)",1],
+  ["crecheChercher","Récupérer à la crèche",1],
+  ["creche","Récupérer bébé malade à la crèche en plein boulot",3],
+  ["pediatre","Médecin ou pédiatre, vaccins et pleurs compris",2],
+  ["courses","Refaire le stock de couches, lingettes et lait",2],
   ["purees","Purées de la semaine",3],
-  ["beauxparents","Dimanche chez les beaux-parents",4],
-  ["malade","Nuit avec bébé malade",5],
-  ["creche","Récupérer bébé malade à la crèche",3],
+  ["matinee","Matinée solo pendant que l'autre dort",3],
   ["reveil530","Lever à 5 h 30 pour le petit-déj",2],
   ["poussette","Balade poussette de 2 h pour la sieste",2],
   ["resto","Bébé sur les genoux pendant que l'autre mange chaud",1],
-  ["coucheResto","Change dans les toilettes du resto",1],
-  ["lessive","Lessive, séchage et pliage des bodys",2],
+  ["dents","Crise de dents gérée",2],
+  ["malade","Nuit avec bébé malade",5],
+  ["doudou","Retrouver le doudou perdu",2],
   ["diner","Préparer le dîner",1],
   ["menage","Grand ménage de la maison",3],
-  ["doudou","Retrouver le doudou perdu",2],
-  ["babysit","Garder les enfants d'un autre couple",4],
   ["voyage","Trajet en voiture avec bébé qui hurle",3],
+  ["beauxparents","Dimanche chez les beaux-parents",4],
+  ["babysit","Garder les enfants d'un autre couple",4],
+  ["journee","Journée entière en solo",6],
+  ["weekend","Week-end entier en solo",15],
+  ["semaine","Semaine entière en solo, statut héros national",35],
   ["custom","Autre exploit…",0],
 ];
 const SPEND = [
@@ -396,7 +409,7 @@ const MAX_CUSTOM = 10, MAX_TRANSFER = 50;
 const NIGHT = new Set(["nuit","reveil","biberon4h"]);
 const PARTY = new Set(["terrasse","match","lendemain","soiree","3h","paris","ski","apero","concert","degenere","copines","festival","evg"]);
 const SLEEP = new Set(["sieste","grassemat","douche"]);
-NIGHT.add("malade");
+["malade","nuitPartielle","allaitementNuit"].forEach(k=>NIGHT.add(k));
 const TITLES = [
   [40,"Fortune familiale"],[20,"Épargne de compétition"],[8,"Tranquille, ça roule"],
   [0,"Fin de mois serrée"],[-10,"Découvert autorisé"],[-25,"Interdit bancaire"],[-Infinity,"L'huissier est en route"],
@@ -700,7 +713,7 @@ function renderMe(){
   }).join("");
   // raccourcis : mes 4 gains les plus fréquents, sinon les classiques
   const cnt={}; entries.filter(e=>e.who===me&&e.type==="earn"&&e.key&&e.key!=="custom").forEach(e=>cnt[e.key]=(cnt[e.key]||0)+1);
-  const keys=[...new Set([...Object.keys(cnt).sort((a,z)=>cnt[z]-cnt[a]),"nuit","reveil","couche","dodo"])].filter(k=>EARN.some(x=>x[0]===k)).slice(0,4);
+  const keys=[...new Set([...Object.keys(cnt).sort((a,z)=>cnt[z]-cnt[a]),"nuit","reveil","couche","bain"])].filter(k=>EARN.some(x=>x[0]===k)).slice(0,4);
   $("meShort").innerHTML=keys.map(k=>{const [,l,v]=EARN.find(x=>x[0]===k);return `<button data-short="${k}">${esc(l)} <span class="pos">+${v}</span></button>`}).join("");
 }
 function renderWhoGrid(){
@@ -723,7 +736,7 @@ function renderTab(){
     </div>
     <label class="f">Motif<select id="tMotif">${TRANSFER_MOTIFS.map(m=>`<option ${m===tMotif?"selected":""}>${m}</option>`).join("")}</select></label>`;
   } else {
-    h = `<input id="search" type="search" class="search" autocomplete="off" placeholder="${tab==="earn"?"Chercher un exploit : nuit, couche, crèche…":"Chercher un plaisir : bière, week-end, sieste…"}" value="${esc(query)}" aria-label="Chercher une opération">
+    h = `<input id="search" type="search" class="search" autocomplete="off" placeholder="${tab==="earn"?"Chercher un exploit : biberon, couche, bain, crèche…":"Chercher un plaisir : bière, week-end, sieste…"}" value="${esc(query)}" aria-label="Chercher une opération">
       <div class="acts" id="acts"></div>`;
     if(pick==="custom"){
       h += `<div class="row" style="margin-top:12px">
@@ -810,7 +823,7 @@ function renderSim(){
       <ul>
         <li><b class="num">${n3}</b> nuit${n3>1?"s":""} de garde complète${n3>1?"s":""}</li>
         <li><b class="num">${miss}</b> réveil${miss>1?"s":""} nocturne${miss>1?"s":""}</li>
-        <li><b class="num">${n2}</b> couche${n2>1?"s":""} explosive${n2>1?"s":""}</li>
+        <li><b class="num">${Math.ceil(miss/3)}</b> couche${Math.ceil(miss/3)>1?"s":""} catastrophe</li>
         <li>ou <b class="num">${n4}</b> dimanche${n4>1?"s":""} chez les beaux-parents</li>
       </ul>`;
   }
