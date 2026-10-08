@@ -533,7 +533,7 @@ function renderUne(){
   if(big && big.amount>=10) lines.push(`Dépense record : ${P[big.who].name} lâche ${big.amount} jetons pour « ${big.label} »`);
   const tr = list.find(e=>e.type==="transfer" && P[e.to] && P[e.to].couple!==P[e.who].couple);
   if(tr) lines.push(`Scandale : ${P[tr.who].name} vire ${tr.amount} jetons à ${P[tr.to].name}, hors du foyer`);
-  if(!lines.length) lines.push(`${list.length} opérations ce mois-ci. ${rich.name} mène la danse, ${poor.name} ferme la marche`);
+  if(!lines.length) lines.push(`${plural(list.length,"opération")} ce mois-ci. ${rich.name} mène la danse, ${poor.name} ferme la marche`);
   // une ligne qui change chaque jour, stable dans la journée
   const day = Math.floor(Date.now()/864e5);
   $("une").textContent = lines[day % lines.length] + ".";
