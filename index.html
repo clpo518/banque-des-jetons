@@ -1,0 +1,986 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1F6F8B">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='46' fill='%23B97F0E'/%3E%3Ccircle cx='50' cy='50' r='32' fill='%23E3A92B'/%3E%3C/svg%3E">
+<title>La Banque des Jetons</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Layout : un guichet de banque au bord du lac. Comptes des 4 couples, guichet, puis le mois (courbe, trophées, classement) et le relevé. */
+:root{
+  --bg:#EEF3F4; --surface:#FFFFFF; --sunk:#E3ECEF; --ink:#11283A; --muted:#5B6F7C; --line:#D3DFE4; --grid:#E4ECEF;
+  --lake:#1F6F8B; --lake-ink:#FFFFFF; --chip:#E3A92B; --chip-edge:#B97F0E;
+  --plus:#1B8653; --minus:#CC3F35; --warn:#B9790B;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300; --s7:#4a3aa7; --s8:#e34948;
+  --display:"Bricolage Grotesque", "Arial Rounded MT Bold", system-ui, sans-serif;
+  --body:"Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0C1A22; --surface:#13262F; --sunk:#0F2029; --ink:#E6EFF2; --muted:#93A8B3; --line:#24404D; --grid:#1C3340;
+  --lake:#5DB4D0; --lake-ink:#08202A; --chip:#F0C04E; --chip-edge:#B98A1A;
+  --plus:#4CC48A; --minus:#F0705F; --warn:#F0B94E;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0C1A22; --surface:#13262F; --sunk:#0F2029; --ink:#E6EFF2; --muted:#93A8B3; --line:#24404D; --grid:#1C3340;
+  --lake:#5DB4D0; --lake-ink:#08202A; --chip:#F0C04E; --chip-edge:#B98A1A;
+  --plus:#4CC48A; --minus:#F0705F; --warn:#F0B94E;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --s8:#e66767;
+  color-scheme:dark}
+
+*{box-sizing:border-box}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+[hidden]{display:none!important}
+img{max-width:100%}
+.gate{position:fixed;inset:0;z-index:10;background:var(--bg);display:grid;place-items:center;padding:16px}
+.gate form{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:24px;max-width:380px;width:100%;display:flex;flex-direction:column;gap:14px}
+.gate h1{font-size:2rem;line-height:1.05}
+.gate p{margin:0;color:var(--muted)}
+.gate .err{color:var(--minus);font-weight:600;font-size:.9rem}
+.whoami{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:24px;max-width:520px;width:100%;display:flex;flex-direction:column;gap:14px}
+.whoami h1{font-size:2rem;line-height:1.05}
+.whoami p{margin:0;color:var(--muted)}
+.whogrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.whogrid .cpl{display:contents}
+.whogrid button{display:flex;align-items:center;gap:10px;border:1.5px solid var(--line);background:var(--bg);border-radius:12px;padding:10px;font-weight:700;font-size:1rem;text-align:left}
+.whogrid button:hover{border-color:var(--lake)}
+.me{display:grid;grid-template-columns:1.1fr 1fr;gap:18px}
+@media (max-width:860px){.me{grid-template-columns:1fr}}
+.me-id{display:flex;align-items:center;gap:14px}
+.me-id .ava{width:56px;height:56px;font-size:1.5rem}
+.me-id h2{font-size:clamp(1.5rem,4vw,2.1rem)}
+.me-big{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.me-big .bal{font-size:clamp(2.4rem,7vw,3.4rem);line-height:1}
+.me-big span{color:var(--muted);font-weight:600}
+.stats3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stats3 div{background:var(--sunk);border-radius:10px;padding:10px;display:flex;flex-direction:column}
+.stats3 b{font-family:var(--display);font-size:1.3rem;font-variant-numeric:tabular-nums}
+.stats3 span{font-size:.75rem;color:var(--muted);font-weight:600}
+.goals{display:flex;flex-direction:column;gap:10px}
+.goal{display:grid;grid-template-columns:1fr auto;gap:4px 10px;font-size:.88rem}
+.goal .gauge{grid-column:1/-1;height:8px}
+.shortcuts{display:flex;flex-wrap:wrap;gap:8px}
+.shortcuts button{border:1.5px solid var(--line);background:var(--bg);border-radius:99px;padding:6px 12px;font-weight:600;font-size:.85rem}
+.shortcuts button:hover{border-color:var(--lake)}
+.shortcuts .pos{font-family:var(--display);font-weight:800}
+.linkbtn{border:0;background:none;color:var(--muted);text-decoration:underline;font-size:.8rem;padding:0;text-align:left}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:1080px;margin:0 auto;padding-inline:16px;padding-block:28px 60px;display:flex;flex-direction:column;gap:36px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;letter-spacing:-.01em}
+h2{font-size:1.45rem;font-weight:800}
+.eyebrow{font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:700}
+.num{font-variant-numeric:tabular-nums}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--lake);outline-offset:2px}
+input,select{font:inherit;color:var(--ink);background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;min-width:0}
+
+header{display:grid;grid-template-columns:1fr auto;gap:20px;align-items:end}
+header h1{font-size:clamp(2.1rem,6vw,3.6rem);font-weight:800;line-height:1}
+header p{margin:10px 0 0;color:var(--muted);max-width:58ch}
+.rate{display:flex;flex-direction:column;gap:2px;border:1.5px dashed var(--line);border-radius:var(--r);padding:12px 16px;font-size:.85rem;min-width:0}
+.rate b{font-family:var(--display);font-size:1.05rem}
+@media (max-width:700px){header{grid-template-columns:1fr}}
+.mode{font-size:.8rem;color:var(--muted)}
+.mode.local{color:var(--warn)}
+
+.chip{--s:22px;width:var(--s);height:var(--s);border-radius:50%;flex:none;display:inline-block;vertical-align:middle;
+  background:radial-gradient(circle at 50% 50%,var(--chip) 0 52%,transparent 53%),
+             repeating-conic-gradient(var(--chip-edge) 0 22.5deg,var(--chip) 22.5deg 45deg);
+  box-shadow:inset 0 0 0 2px var(--chip-edge)}
+
+.couples{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.couple{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:12px}
+.couple-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.couple-head h3{font-size:1.05rem}
+.couple-head span{font-size:.78rem;color:var(--muted)}
+.person{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center}
+.ava{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:1rem;flex:none}
+.pname{font-weight:700;line-height:1.2}
+.ptitle{font-size:.78rem;color:var(--muted)}
+.bal{font-family:var(--display);font-weight:800;font-size:1.35rem;display:flex;align-items:center;gap:6px}
+.pos{color:var(--plus)} .neg{color:var(--minus)}
+.duel{font-size:.82rem;color:var(--muted);border-top:1px dashed var(--line);padding-top:10px}
+.duel b{color:var(--ink)}
+.tug{height:8px;border-radius:99px;background:var(--sunk);position:relative;overflow:hidden;margin-top:6px}
+.tug i{position:absolute;top:0;bottom:0;background:var(--lake);border-radius:99px;transition:all .4s}
+.tug::after{content:"";position:absolute;left:50%;top:-2px;bottom:-2px;width:2px;background:var(--muted)}
+
+.desk{display:grid;grid-template-columns:1.4fr 1fr;gap:18px;align-items:start}
+@media (max-width:860px){.desk{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;display:flex;flex-direction:column;gap:16px;min-width:0}
+.who{display:flex;flex-wrap:wrap;gap:8px}
+.who button{display:flex;align-items:center;gap:8px;border:1.5px solid var(--line);background:var(--bg);border-radius:99px;padding:4px 12px 4px 4px;font-weight:600}
+.who button .ava{width:28px;height:28px;font-size:.8rem}
+.who button[aria-pressed="true"]{border-color:var(--lake);background:var(--lake);color:var(--lake-ink)}
+.tabs{display:grid;grid-template-columns:repeat(var(--n,3),1fr);background:var(--sunk);border-radius:12px;padding:4px;gap:4px}
+.tabs button{border:0;background:transparent;border-radius:9px;padding:9px 6px;font-weight:700;color:var(--muted);font-size:.9rem}
+.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgb(0 0 0 / .12)}
+.search{margin-bottom:10px;padding-left:38px;background:var(--surface) no-repeat 12px 50%/16px;background-image:radial-gradient(circle at 40% 40%,transparent 4.5px,var(--muted) 5px 6.5px,transparent 7px)}
+.acts{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;max-height:360px;overflow:auto;padding:2px 4px 2px 2px}
+.act{text-align:left;border:1.5px solid var(--line);background:var(--bg);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;min-height:84px;transition:transform .12s,border-color .12s}
+.act:hover{transform:translateY(-2px);border-color:var(--lake)}
+.act[aria-pressed="true"]{border-color:var(--lake);box-shadow:inset 0 0 0 1.5px var(--lake)}
+.act .lbl{font-weight:600;font-size:.88rem;line-height:1.25}
+.act .price{margin-top:auto;display:flex;align-items:center;gap:5px;font-weight:800;font-family:var(--display)}
+.act .price .chip{--s:16px}
+.act.earn .price{color:var(--plus)} .act.spend .price{color:var(--minus)}
+.row{display:flex;gap:10px;align-items:end;flex-wrap:wrap}
+.row > *{flex:1 1 140px;min-width:0}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:.8rem;font-weight:600;color:var(--muted)}
+.qty{display:flex;align-items:center;border:1.5px solid var(--line);border-radius:10px;overflow:hidden;flex:0 0 auto;background:var(--surface)}
+.qty button{border:0;background:var(--sunk);width:40px;height:42px;font-size:1.2rem;font-weight:700}
+.qty output{min-width:42px;text-align:center;font-weight:700}
+.go{border:0;border-radius:12px;padding:14px 18px;font-weight:800;font-family:var(--display);font-size:1.05rem;background:var(--lake);color:var(--lake-ink);display:flex;justify-content:center;align-items:center;gap:10px}
+.go:disabled{opacity:.45;cursor:not-allowed}
+.preview{font-size:.88rem;color:var(--muted);min-height:1.4em}
+.preview b{color:var(--ink)}
+.toast{font-weight:600;font-size:.9rem;padding:10px 12px;border-radius:10px;background:var(--sunk)}
+
+.verdict{border-radius:12px;padding:14px;background:var(--sunk);display:flex;flex-direction:column;gap:6px}
+.verdict .big{font-family:var(--display);font-weight:800;font-size:1.3rem;line-height:1.2}
+.verdict ul{margin:0;padding-left:18px;font-size:.9rem}
+.gauge{height:10px;background:var(--bg);border-radius:99px;overflow:hidden}
+.gauge i{display:block;height:100%;border-radius:99px;transition:width .4s}
+
+/* Le mois */
+.monthbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.monthbar h2{min-width:0}
+.mnav{display:flex;align-items:center;gap:6px;margin-left:auto}
+.mnav button{border:1.5px solid var(--line);background:var(--surface);border-radius:10px;width:40px;height:40px;font-size:1.2rem;font-weight:700}
+.mnav button:disabled{opacity:.35;cursor:not-allowed}
+.mnav span{font-family:var(--display);font-weight:800;font-size:1.15rem;min-width:9.5em;text-align:center;text-transform:capitalize}
+.une{background:var(--ink);color:var(--bg);border-radius:var(--r);padding:16px 20px;display:flex;flex-direction:column;gap:4px}
+.une .eyebrow{color:inherit;opacity:.7}
+.une p{margin:0;font-family:var(--display);font-weight:800;font-size:clamp(1.15rem,3vw,1.6rem);line-height:1.2;text-wrap:balance}
+.chartbox{position:relative}
+.chartbox svg{display:block;width:100%;height:auto;overflow:visible}
+.chartbox text{font-family:var(--body);font-size:11px;fill:var(--muted)}
+.chartbox .endlbl{font-weight:700;font-size:12px;fill:var(--ink)}
+.tip{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:.8rem;box-shadow:0 6px 18px rgb(0 0 0 / .14);min-width:150px;z-index:2}
+.tip b{display:block;margin-bottom:4px}
+.tip div{display:grid;grid-template-columns:10px 1fr auto;gap:6px;align-items:center}
+.tip i{width:10px;height:3px;border-radius:2px}
+.legend{display:flex;flex-wrap:wrap;gap:6px}
+.legend button{display:flex;align-items:center;gap:6px;border:1.5px solid var(--line);background:var(--bg);border-radius:99px;padding:4px 10px;font-size:.82rem;font-weight:600}
+.legend button i{width:14px;height:3px;border-radius:2px}
+.legend button[aria-pressed="false"]{opacity:.55}
+.trophies{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.trophy{border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:center;background:var(--surface)}
+.trophy .medal{grid-row:span 3;font-size:1.8rem;line-height:1}
+.trophy .t{font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:700}
+.trophy .w{font-family:var(--display);font-weight:800;font-size:1.1rem;line-height:1.15}
+.trophy .d{font-size:.8rem;color:var(--muted)}
+.trophy.none .w{color:var(--muted);font-weight:500;font-family:var(--body);font-size:.9rem}
+.bottom{display:grid;grid-template-columns:1fr 1.5fr;gap:18px;align-items:start}
+@media (max-width:860px){.bottom{grid-template-columns:1fr}}
+.rank{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.rank li{display:grid;grid-template-columns:26px auto 1fr auto;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}
+.rank li:last-child{border-bottom:0}
+.rank .pos-n{font-family:var(--display);font-weight:800;color:var(--muted)}
+.rank .ava{width:30px;height:30px;font-size:.8rem}
+.rank .bar{grid-column:3/5;height:4px;border-radius:2px;background:var(--sunk);overflow:hidden;margin-top:-4px}
+.rank .bar i{display:block;height:100%;border-radius:2px}
+.log{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;max-height:640px;overflow:auto}
+.log li{display:grid;grid-template-columns:auto 1fr auto auto;gap:4px 10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.log .ava{width:30px;height:30px;font-size:.8rem}
+.log .what{font-size:.9rem;line-height:1.3;min-width:0}
+.log .what small{display:block;color:var(--muted);font-size:.76rem}
+.log .amt{font-family:var(--display);font-weight:800}
+.log .del{border:0;background:transparent;color:var(--muted);font-size:1.1rem;padding:4px 6px;border-radius:6px}
+.log .del:hover{background:var(--sunk);color:var(--minus)}
+.reacts{grid-column:2/5;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.reacts button{border:1px solid var(--line);background:var(--bg);border-radius:99px;padding:1px 8px;font-size:.8rem;display:flex;gap:4px;align-items:center}
+.reacts button[aria-pressed="true"]{border-color:var(--lake);background:var(--sunk)}
+.reacts button span{font-weight:700;font-variant-numeric:tabular-nums}
+.flag{font-size:.75rem;font-weight:700;color:var(--minus)}
+.contested .amt{text-decoration:line-through;text-decoration-thickness:2px}
+.empty{color:var(--muted);font-size:.9rem;padding:14px;border:1.5px dashed var(--line);border-radius:12px}
+.sec-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+footer{color:var(--muted);font-size:.8rem;text-align:center}
+@keyframes pop{0%{transform:scale(.6) rotate(-30deg);opacity:0}60%{transform:scale(1.15) rotate(10deg);opacity:1}100%{transform:scale(1) rotate(0)}}
+.pop{animation:pop .45s ease-out}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="gate" id="gate" hidden>
+  <form id="gateForm">
+    <span class="chip" style="--s:44px"></span>
+    <h1>La Banque des Jetons</h1>
+    <p>Accès réservé aux quatre couples. Entrez le code du coffre.</p>
+    <input id="gateCode" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Code du coffre" aria-label="Code du coffre">
+    <div class="err" id="gateErr" hidden>Mauvais code. Demandez-le au groupe.</div>
+    <button class="go" type="submit"><span class="chip" style="--s:20px"></span>Ouvrir le coffre</button>
+  </form>
+  <div class="whoami" id="gateWho" hidden>
+    <span class="chip" style="--s:44px"></span>
+    <h1>Qui êtes-vous ?</h1>
+    <p>Choisissez votre prénom. La banque s'en souviendra sur cet appareil.</p>
+    <div class="whogrid" id="whoGrid"></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <header>
+    <div>
+      <div class="eyebrow">Établissement de crédit parental · Annecy</div>
+      <h1>La Banque des Jetons</h1>
+      <p>Chaque nuit blanche rapporte, chaque bière se paie. Quatre couples, huit comptes, et un découvert qui se creuse sans que personne ne s'en rende compte.</p>
+    </div>
+    <div class="rate">
+      <span class="eyebrow">Cours officiel</span>
+      <span><b>1 nuit de garde</b> = 3 <span class="chip" style="--s:14px"></span></span>
+      <span><b>1 week-end à Paris</b> = 25 <span class="chip" style="--s:14px"></span></span>
+      <span id="mode" class="mode">Connexion au coffre…</span>
+      <button class="linkbtn" id="logout" type="button">Changer de code</button>
+    </div>
+  </header>
+
+  <section class="me" id="meBox" hidden>
+    <div class="panel">
+      <div class="me-id"><span id="meAva"></span><div><div class="eyebrow">Mon compte</div><h2 id="meHello"></h2></div></div>
+      <div class="me-big"><span class="bal num" id="meBal"></span><span id="meRank"></span></div>
+      <div class="preview" id="meDuel" style="margin:0"></div>
+      <div class="stats3" id="meStats"></div>
+    </div>
+    <div class="panel">
+      <div class="sec-head"><h3>Mes objectifs</h3><span class="eyebrow">Ce qui est à portée</span></div>
+      <div class="goals" id="meGoals"></div>
+      <div class="sec-head"><h3>Mes raccourcis</h3><span class="eyebrow">Déclarer en un clic</span></div>
+      <div class="shortcuts" id="meShort"></div>
+    </div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:12px">
+    <div class="sec-head"><h2>Les comptes</h2><span class="eyebrow">Solde depuis l'ouverture</span></div>
+    <div class="couples" id="couples"></div>
+  </section>
+
+  <section class="desk">
+    <div class="panel" id="guichet">
+      <div class="sec-head"><h2>Le guichet</h2><span class="eyebrow">Déclarer une opération</span></div>
+      <div>
+        <div class="eyebrow" style="margin-bottom:8px">Vous déclarez en tant que</div>
+        <div class="who" id="who"></div>
+      </div>
+      <div class="tabs" role="tablist" id="tabs">
+        <button role="tab" data-t="earn" aria-selected="true">J'ai gagné</button>
+        <button role="tab" data-t="spend" aria-selected="false">Je dépense</button>
+        <button role="tab" data-t="transfer" aria-selected="false">Virement</button>
+      </div>
+      <div id="tabBody"></div>
+      <div class="preview" id="preview"></div>
+      <button class="go" id="go" disabled><span class="chip" style="--s:20px"></span><span id="goLbl">Encaisser</span></button>
+      <div class="toast" id="toast" hidden></div>
+    </div>
+
+    <div class="panel">
+      <div class="sec-head"><h2>Je peux me le payer ?</h2><span class="eyebrow">Simulateur</span></div>
+      <div class="row">
+        <label class="f">Qui ?<select id="simWho"></select></label>
+        <label class="f">Pour quoi ?<select id="simWhat"></select></label>
+      </div>
+      <div class="verdict" id="verdict"></div>
+    </div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:16px">
+    <div class="monthbar">
+      <h2>Le mois en jetons</h2>
+      <div class="mnav"><button id="mPrev" aria-label="Mois précédent">‹</button><span id="mLbl"></span><button id="mNext" aria-label="Mois suivant">›</button></div>
+    </div>
+    <div class="une"><span class="eyebrow">La une du Dauphiné parental</span><p id="une"></p></div>
+    <div class="panel">
+      <div class="sec-head"><h3>Évolution des soldes</h3><span class="eyebrow">Solde en fin de journée · cliquez un nom pour le suivre</span></div>
+      <div class="chartbox" id="chartbox"><svg id="chart" viewBox="0 0 680 260" role="img" aria-label="Évolution des soldes de jetons sur le mois"></svg><div class="tip" id="tip" hidden></div></div>
+      <div class="legend" id="legend"></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="sec-head"><h3>Les trophées du mois</h3><span class="eyebrow">Remis automatiquement, aucun recours possible</span></div>
+      <div class="trophies" id="trophies"></div>
+    </div>
+  </section>
+
+  <section class="bottom">
+    <div class="panel">
+      <div class="sec-head"><h2>Classement</h2></div>
+      <div class="tabs" role="tablist" id="rankTabs" style="--n:4">
+        <button role="tab" data-r="solde" aria-selected="true">Solde</button>
+        <button role="tab" data-r="gagne" aria-selected="false">Gagné</button>
+        <button role="tab" data-r="depense" aria-selected="false">Dépensé</button>
+        <button role="tab" data-r="nuit" aria-selected="false">Nuits</button>
+      </div>
+      <div class="preview" id="rankHint" style="margin-top:-6px"></div>
+      <ol class="rank" id="rank"></ol>
+    </div>
+    <div class="panel">
+      <div class="sec-head"><h2>Relevé du mois</h2><span class="eyebrow" id="logCount"></span></div>
+      <ul class="log" id="log"></ul>
+    </div>
+  </section>
+
+  <footer>La Banque des Jetons décline toute responsabilité en cas de dispute conjugale. Aucun jeton n'est remboursable en heures de sommeil.</footer>
+</div>
+
+<script>
+const COUPLES = [
+  {name:"Serge & Audrey", people:["Serge","Audrey"]},
+  {name:"Manon & Sacha", people:["Manon","Sacha"]},
+  {name:"Mélanie & Nicolas", people:["Mélanie","Nicolas"]},
+  {name:"Clément & Marie", people:["Clément","Marie"]},
+];
+// texte foncé sur les teintes claires (aqua, jaune, rose)
+const DARK_INK = new Set([3,4,5]);
+const PEOPLE = COUPLES.flatMap((c,ci)=>c.people.map((n,pi)=>{const k=ci*2+pi+1;return {id:slug(n),name:n,couple:ci,color:`var(--s${k})`,ink:DARK_INK.has(k)?"#11283A":"#FFFFFF"}}));
+const P = Object.fromEntries(PEOPLE.map(p=>[p.id,p]));
+const partnerOf = id => PEOPLE.find(p=>p.couple===P[id].couple && p.id!==id);
+
+const EARN = [
+  ["nuit","Nuit de garde complète",3],
+  ["reveil","Réveil nocturne (par réveil)",1],
+  ["biberon4h","Biberon de 4 h du mat",1],
+  ["couche","Couche explosive, niveau Tchernobyl",2],
+  ["dodo","Bain, pyjama et dodo en solo",2],
+  ["matinee","Matinée solo pendant que l'autre dort",3],
+  ["journee","Journée entière en solo",6],
+  ["dents","Crise de dents gérée",2],
+  ["pediatre","Rendez-vous pédiatre ou vaccins",2],
+  ["purees","Purées de la semaine",3],
+  ["beauxparents","Dimanche chez les beaux-parents",4],
+  ["malade","Nuit avec bébé malade",5],
+  ["creche","Récupérer bébé malade à la crèche",3],
+  ["reveil530","Lever à 5 h 30 pour le petit-déj",2],
+  ["poussette","Balade poussette de 2 h pour la sieste",2],
+  ["resto","Bébé sur les genoux pendant que l'autre mange chaud",1],
+  ["coucheResto","Change dans les toilettes du resto",1],
+  ["lessive","Lessive, séchage et pliage des bodys",2],
+  ["diner","Préparer le dîner",1],
+  ["menage","Grand ménage de la maison",3],
+  ["doudou","Retrouver le doudou perdu",2],
+  ["babysit","Garder les enfants d'un autre couple",4],
+  ["voyage","Trajet en voiture avec bébé qui hurle",3],
+  ["custom","Autre exploit…",0],
+];
+const SPEND = [
+  ["sieste","Sieste sans culpabilité",1],
+  ["sport","Séance de sport",2],
+  ["grassemat","Grasse mat jusqu'à 10 h",3],
+  ["terrasse","Bières en terrasse",3],
+  ["match","Soirée match chez les potes",4],
+  ["lendemain","Lendemain de cuite, hors service",4],
+  ["soiree","Soirée entre potes",5],
+  ["3h","Supplément retour après 2 h du mat",3],
+  ["journeeVelo","Journée vélo, ski ou rando",6],
+  ["ski","Week-end ski entre potes",20],
+  ["paris","Week-end full bière à Paris",25],
+  ["repasChaud","Repas chaud sans interruption",1],
+  ["douche","Douche de 20 minutes",1],
+  ["apero","Apéro chez les voisins",2],
+  ["console","Partie de console",2],
+  ["padel","Golf ou padel",4],
+  ["massage","Coiffeur ou massage",3],
+  ["shopping","Shopping en solo",3],
+  ["concert","Concert",6],
+  ["degenere","Soirée qui dégénère",8],
+  ["copines","Week-end entre copines",22],
+  ["festival","Festival",15],
+  ["evg","Enterrement de vie de garçon ou de jeune fille",30],
+  ["custom","Autre plaisir…",0],
+];
+const MAX_CUSTOM = 10, MAX_TRANSFER = 50;
+const NIGHT = new Set(["nuit","reveil","biberon4h"]);
+const PARTY = new Set(["terrasse","match","lendemain","soiree","3h","paris","ski","apero","concert","degenere","copines","festival","evg"]);
+const SLEEP = new Set(["sieste","grassemat","douche"]);
+NIGHT.add("malade");
+const TITLES = [
+  [40,"Fortune familiale"],[20,"Épargne de compétition"],[8,"Tranquille, ça roule"],
+  [0,"Fin de mois serrée"],[-10,"Découvert autorisé"],[-25,"Interdit bancaire"],[-Infinity,"L'huissier est en route"],
+];
+const TRANSFER_MOTIFS = ["Remboursement de dette","Pot-de-vin","Cadeau d'anniversaire","Rachat de grasse mat","Paris perdu","Prêt à taux zéro (promis)"];
+const REACTS = [["bravo","👏","Respect"],["lol","😂","Mort de rire"],["doute","🙄","Mouais"],["conteste","🚩","Contester"]];
+
+function slug(s){return s.normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase()}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function title(b){return TITLES.find(([min])=>b>=min)[1]}
+function fmt(n){return (n>0?"+":n<0?"−":"")+Math.abs(n)}
+function plural(n,w){return `${n} ${w}${Math.abs(n)>1?"s":""}`}
+function ava(p){return `<span class="ava" style="background:${p.color};color:${p.ink}">${esc(p.name[0])}</span>`}
+const $ = id => document.getElementById(id);
+function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
+
+// ---------- état ----------
+let entries = [];          // toutes les opérations, plus récentes d'abord
+
+let me = ls("bdj-me"); if(!P[me]) me = null;
+let tab = "earn", pick = null, qty = 1, query = "";
+let customLbl = "", customAmt = 1, tTo = null, tAmt = 3, tMotif = TRANSFER_MOTIFS[0];
+const now = new Date();
+let month = {y:now.getFullYear(), m:now.getMonth()};
+let rankMode = "solde";
+let focus = new Set(me ? [me, partnerOf(me).id] : []);
+
+function delta(e,id){
+  if(e.who===id) return e.type==="earn"?e.amount:-e.amount;
+  if(e.type==="transfer" && e.to===id) return e.amount;
+  return 0;
+}
+function balances(until=Infinity){
+  const b = Object.fromEntries(PEOPLE.map(p=>[p.id,0]));
+  for(const e of entries){ if(e.ts>=until) continue; for(const id in b) b[id]+=delta(e,id); }
+  return b;
+}
+function monthRange(){ return [new Date(month.y,month.m,1).getTime(), new Date(month.y,month.m+1,1).getTime()]; }
+function monthEntries(){ const [a,z]=monthRange(); return entries.filter(e=>e.ts>=a&&e.ts<z); }
+function isCurrentMonth(){ return month.y===now.getFullYear() && month.m===now.getMonth(); }
+
+// ---------- comptes ----------
+function renderAccounts(){
+  const b = balances();
+  $("couples").innerHTML = COUPLES.map(c=>{
+    const [a,z] = c.people.map(slug);
+    const diff = b[a]-b[z], total=b[a]+b[z];
+    const lead = diff===0 ? "Égalité parfaite. Suspect." :
+      `<b>${esc(P[diff>0?a:z].name)}</b> mène de <b class="num">${plural(Math.abs(diff),"jeton")}</b>`;
+    const span = Math.max(10,Math.abs(b[a])+Math.abs(b[z]));
+    const pct = Math.max(-50,Math.min(50,(diff/span)*50));
+    const bar = pct>=0 ? `left:${50-pct}%;width:${pct}%` : `left:50%;width:${-pct}%`;
+    return `<article class="couple">
+      <div class="couple-head"><h3>${esc(c.name)}</h3><span class="num">foyer ${fmt(total)}</span></div>
+      ${[a,z].map(id=>`<div class="person">${ava(P[id])}<div><div class="pname">${esc(P[id].name)}</div><div class="ptitle">${title(b[id])}</div></div>
+        <div class="bal num ${b[id]<0?"neg":b[id]>0?"pos":""}">${fmt(b[id])}<span class="chip" style="--s:18px"></span></div></div>`).join("")}
+      <div class="duel">${lead}<div class="tug" title="${esc(P[a].name)} à gauche, ${esc(P[z].name)} à droite"><i style="${bar}"></i></div></div>
+    </article>`;
+  }).join("");
+}
+
+// ---------- statistiques du mois ----------
+function monthStats(){
+  const s = Object.fromEntries(PEOPLE.map(p=>[p.id,{earn:0,spend:0,night:0,party:0,sleep:0,given:0,count:0,minBal:Infinity,days:new Set(),contested:0}]));
+  const [a] = monthRange();
+  const running = balances(a);
+  for(const id in s) s[id].minBal = running[id];
+  const asc = [...monthEntries()].sort((x,y)=>x.ts-y.ts);
+  for(const e of asc){
+    const st = s[e.who]; if(!st) continue;
+    st.count++;
+    st.days.add(new Date(e.ts).toDateString());
+    if(e.type==="earn"){ st.earn+=e.amount; if(NIGHT.has(e.key)) st.night+=e.amount; }
+    if(e.type==="spend"){ st.spend+=e.amount; if(PARTY.has(e.key)) st.party+=e.amount; if(SLEEP.has(e.key)) st.sleep+=e.amount; }
+    if(e.type==="transfer") st.given+=e.amount;
+    if((e.reactions?.conteste||[]).length) st.contested++;
+    for(const id in running){ running[id]+=delta(e,id); if(running[id]<s[id].minBal) s[id].minBal=running[id]; }
+  }
+  return s;
+}
+function best(stats,key,dir=1){
+  let top=null;
+  for(const p of PEOPLE){ const v=stats[p.id][key]; if(!top || v*dir>top.v*dir) top={p,v}; }
+  return top;
+}
+
+function renderTrophies(){
+  const st = monthStats(), list = monthEntries();
+  const endB = balances(monthRange()[1]);
+  const T = [];
+  const add = (medal,t,winner,d) => T.push({medal,t,winner,d});
+  const pick = (key,cond) => { const b=best(st,key); return b && cond(b.v) ? b : null; };
+  let b;
+  b = pick("night",v=>v>0); add("🌙","Héros de la nuit",b,b&&`${plural(b.v,"jeton")} gagnés entre minuit et l'aube`);
+  b = pick("party",v=>v>0); add("🍺","Pilier de comptoir",b,b&&`${plural(b.v,"jeton")} investis dans la fête`);
+  b = pick("spend",v=>v>0); add("💸","Panier percé",b,b&&`${plural(b.v,"jeton")} dépensés ce mois`);
+  b = pick("earn",v=>v>0); add("🐜","La fourmi",b,b&&`${plural(b.v,"jeton")} gagnés à la sueur du front`);
+  b = pick("given",v=>v>0); add("🎁","Grand mécène",b,b&&`${plural(b.v,"jeton")} offerts aux autres`);
+  b = pick("sleep",v=>v>0); add("😴","Marmotte d'or",b,b&&`${plural(b.v,"jeton")} convertis en sommeil`);
+  b = best(st,"minBal",-1); add("📉","Plongeon du mois",b&&b.v<0?b:null,b&&b.v<0&&`Point bas à ${fmt(b.v)}. Le banquier s'en souvient`);
+  b = pick("contested",v=>v>0); add("🚩","Déclarations douteuses",b,b&&`${plural(b.v,"opération")} contestée${b.v>1?"s":""}`);
+  // couples
+  if(list.length){
+    const gaps = COUPLES.map(c=>{const [x,y]=c.people.map(slug);return {c,gap:Math.abs(endB[x]-endB[y])}});
+    const calm = gaps.reduce((m,g)=>g.gap<m.gap?g:m), war = gaps.reduce((m,g)=>g.gap>m.gap?g:m);
+    T.push({medal:"💞",t:"Couple fusionnel",label:calm.c.name,d:`${plural(calm.gap,"jeton")} d'écart seulement`});
+    if(war.gap>0) T.push({medal:"🥊",t:"Guerre froide",label:war.c.name,d:`${plural(war.gap,"jeton")} d'écart. Ambiance au dîner`});
+  }
+  $("trophies").innerHTML = T.map(x=>{
+    const w = x.label ? esc(x.label) : x.winner ? esc(x.winner.p.name) : null;
+    return `<div class="trophy ${w?"":"none"}"><span class="medal" aria-hidden="true">${x.medal}</span><span class="t">${x.t}</span>
+      <span class="w">${w||"Personne pour l'instant"}</span><span class="d">${w?esc(x.d):"Le titre est à prendre"}</span></div>`;
+  }).join("");
+}
+
+function renderUne(){
+  const list = monthEntries(), st = monthStats();
+  const endB = balances(monthRange()[1]);
+  const lines = [];
+  if(!list.length){
+    $("une").textContent = isCurrentMonth() ? "Calme plat à Annecy. Aucun jeton n'a encore bougé ce mois-ci." : "Ce mois-là, rien. Les archives sont formelles.";
+    return;
+  }
+  const sorted = [...PEOPLE].sort((a,b)=>endB[a.id]-endB[b.id]);
+  const poor = sorted[0], rich = sorted[sorted.length-1];
+  if(endB[poor.id]<=-25) lines.push(`${poor.name} frappé d'interdit bancaire : la PS5 serait saisie dès lundi`);
+  else if(endB[poor.id]<0) lines.push(`${poor.name} à ${fmt(endB[poor.id])} : son conjoint réclame un plan de redressement`);
+  const party = best(st,"party");
+  if(party && party.v>=20) lines.push(`${party.p.name} a bu ${party.v} jetons ce mois-ci. Les brasseries d'Annecy remercient`);
+  const night = best(st,"night");
+  if(night && night.v>=6) lines.push(`${night.p.name}, ${night.v} jetons de nuit : les cernes atteignent un record historique`);
+  if(endB[rich.id]>=15) lines.push(`${rich.name} assis sur ${endB[rich.id]} jetons. Rumeurs de week-end à Paris`);
+  const big = list.filter(e=>e.type==="spend").sort((a,b)=>b.amount-a.amount)[0];
+  if(big && big.amount>=10) lines.push(`Dépense record : ${P[big.who].name} lâche ${big.amount} jetons pour « ${big.label} »`);
+  const tr = list.find(e=>e.type==="transfer" && P[e.to] && P[e.to].couple!==P[e.who].couple);
+  if(tr) lines.push(`Scandale : ${P[tr.who].name} vire ${tr.amount} jetons à ${P[tr.to].name}, hors du foyer`);
+  if(!lines.length) lines.push(`${list.length} opérations ce mois-ci. ${rich.name} mène la danse, ${poor.name} ferme la marche`);
+  // une ligne qui change chaque jour, stable dans la journée
+  const day = Math.floor(Date.now()/864e5);
+  $("une").textContent = lines[day % lines.length] + ".";
+}
+
+// ---------- courbe ----------
+let chartModel = null;
+function renderChart(){
+  const svg = $("chart");
+  const W=680,H=260,L=40,R=78,T=14,B=28;
+  const [a,z] = monthRange();
+  const daysInMonth = new Date(month.y,month.m+1,0).getDate();
+  const lastDay = isCurrentMonth() ? now.getDate() : daysInMonth;
+  const series = PEOPLE.map(p=>({p,vals:[]}));
+  for(let d=1; d<=lastDay; d++){
+    const b = balances(new Date(month.y,month.m,d+1).getTime());
+    series.forEach(s=>s.vals.push(b[s.p.id]));
+  }
+  // un point de départ « veille du mois » pour voir d'où l'on part
+  const start = balances(a);
+  series.forEach(s=>s.vals.unshift(start[s.p.id]));
+  let lo=0, hi=0;
+  series.forEach(s=>s.vals.forEach(v=>{lo=Math.min(lo,v);hi=Math.max(hi,v)}));
+  if(hi-lo<10){ hi=Math.max(hi,lo+10); }
+  const step = niceStep((hi-lo)/4);
+  lo = Math.floor(lo/step)*step; hi = Math.ceil(hi/step)*step;
+  const x = i => L + (i/daysInMonth)*(W-L-R);
+  const y = v => T + (hi-v)/(hi-lo)*(H-T-B);
+  let g = "";
+  for(let v=lo; v<=hi+1e-9; v+=step){
+    g += `<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="${v===0?"var(--muted)":"var(--grid)"}" stroke-width="${v===0?1.2:1}"/>`;
+    g += `<text x="${L-8}" y="${y(v)+4}" text-anchor="end">${fmt(v)}</text>`;
+  }
+  const ticks = [1,8,15,22,daysInMonth];
+  ticks.forEach(d=>{ g += `<text x="${x(d)}" y="${H-8}" text-anchor="middle">${d}</text>`; });
+  const hasFocus = focus.size>0;
+  const order = [...series].sort((s1,s2)=>(focus.has(s1.p.id)?1:0)-(focus.has(s2.p.id)?1:0));
+  order.forEach(s=>{
+    const on = !hasFocus || focus.has(s.p.id);
+    const pts = s.vals.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+    g += `<polyline points="${pts}" fill="none" stroke="${s.p.color}" stroke-width="${on?2.5:1.5}" stroke-linejoin="round" stroke-linecap="round" opacity="${on?1:.22}"/>`;
+  });
+  // étiquettes directes en bout de ligne, pour les noms suivis (ou tous si aucun)
+  const labelled = series.filter(s=>!hasFocus||focus.has(s.p.id)).map(s=>({s,ly:y(s.vals[s.vals.length-1])})).sort((p,q)=>p.ly-q.ly);
+  for(let i=1;i<labelled.length;i++) if(labelled[i].ly-labelled[i-1].ly<13) labelled[i].ly=labelled[i-1].ly+13;
+  labelled.forEach(({s,ly})=>{
+    const lx = x(s.vals.length-1), ey = y(s.vals[s.vals.length-1]);
+    g += `<circle cx="${lx}" cy="${ey}" r="4" fill="${s.p.color}" stroke="var(--surface)" stroke-width="2"/>`;
+    g += `<text class="endlbl" x="${lx+8}" y="${ly+4}">${esc(s.p.name)} ${fmt(s.vals[s.vals.length-1])}</text>`;
+  });
+  g += `<line id="cross" x1="0" x2="0" y1="${T}" y2="${H-B}" stroke="var(--muted)" stroke-dasharray="3 3" visibility="hidden"/>`;
+  g += `<rect id="hit" x="${L}" y="${T}" width="${W-L-R}" height="${H-T-B}" fill="transparent"/>`;
+  svg.innerHTML = g;
+  chartModel = {series,x,L,R,W,daysInMonth};
+  $("legend").innerHTML = PEOPLE.map(p=>`<button data-f="${p.id}" aria-pressed="${!hasFocus||focus.has(p.id)}"><i style="background:${p.color}"></i>${esc(p.name)}</button>`).join("")
+    + (hasFocus?`<button data-f="*" aria-pressed="true">Tout le monde</button>`:"");
+}
+function niceStep(raw){ const p=Math.pow(10,Math.floor(Math.log10(Math.max(raw,1)))); const n=raw/p; return (n<=1?1:n<=2?2:n<=5?5:10)*p; }
+
+function chartHover(ev){
+  if(!chartModel) return;
+  const svg=$("chart"), r=svg.getBoundingClientRect();
+  const sx = (ev.clientX-r.left)*(680/r.width);
+  const {series,x,L,R,W,daysInMonth} = chartModel;
+  if(sx<L||sx>W-R){ chartLeave(); return; }
+  const i = Math.max(0,Math.min(series[0].vals.length-1, Math.round((sx-L)/(W-L-R)*daysInMonth)));
+  const cross=$("cross"); cross.setAttribute("x1",x(i)); cross.setAttribute("x2",x(i)); cross.setAttribute("visibility","visible");
+  const label = i===0 ? "Avant le 1er" : new Date(month.y,month.m,i).toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"});
+  const rows = [...series].sort((p,q)=>q.vals[i]-p.vals[i]);
+  const tip=$("tip");
+  tip.innerHTML = `<b>${label}</b>`+rows.map(s=>`<div><i style="background:${s.p.color}"></i><span>${esc(s.p.name)}</span><span class="num">${fmt(s.vals[i])}</span></div>`).join("");
+  tip.hidden=false;
+  const box=$("chartbox").getBoundingClientRect();
+  const px = x(i)/680*r.width;
+  tip.style.left = Math.min(box.width-tip.offsetWidth, Math.max(0, px + (px>box.width/2 ? -tip.offsetWidth-12 : 12)))+"px";
+  tip.style.top = "6px";
+}
+function chartLeave(){ $("tip").hidden=true; $("cross")?.setAttribute("visibility","hidden"); }
+
+// ---------- classement ----------
+function renderRank(){
+  document.querySelectorAll("#rankTabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.r===rankMode));
+  const st = monthStats(), endB = balances(monthRange()[1]);
+  const val = id => rankMode==="solde"?endB[id]:rankMode==="gagne"?st[id].earn:rankMode==="depense"?st[id].spend:st[id].night;
+  $("rankHint").textContent = {solde:"Solde total à la fin du mois affiché.",gagne:"Jetons gagnés pendant le mois.",depense:"Jetons dépensés pendant le mois. Être premier n'est pas forcément une fierté.",nuit:"Jetons gagnés la nuit : nuits de garde, réveils, biberons."}[rankMode];
+  const sorted = [...PEOPLE].sort((a,b)=>val(b.id)-val(a.id));
+  const max = Math.max(1,...PEOPLE.map(p=>Math.abs(val(p.id))));
+  const podium = ["🥇","🥈","🥉"];
+  $("rank").innerHTML = sorted.map((p,i)=>{
+    const v = val(p.id);
+    const cls = rankMode==="solde" ? (v<0?"neg":v>0?"pos":"") : "";
+    const sub = rankMode==="solde" ? title(v) : rankMode==="depense" ? (i===0&&v>0?"Panier percé en titre":"") : "";
+    return `<li><span class="pos-n">${v!==0&&i<3?podium[i]:i+1}</span>${ava(p)}<div><div class="pname">${esc(p.name)}</div>${sub?`<div class="ptitle">${sub}</div>`:""}</div>
+      <span class="bal num ${cls}" style="font-size:1.1rem">${rankMode==="solde"?fmt(v):v}</span>
+      <span class="bar"><i style="width:${Math.abs(v)/max*100}%;background:${p.color}"></i></span></li>`;
+  }).join("");
+}
+
+// ---------- relevé ----------
+function renderLog(){
+  const list = monthEntries();
+  $("logCount").textContent = list.length ? plural(list.length,"opération") : "";
+  if(!list.length){
+    $("log").innerHTML = `<li class="empty" style="display:block">${isCurrentMonth()?"Aucune opération ce mois-ci. Déclarez la première nuit blanche au guichet, le coffre s'ouvre.":"Aucune opération ce mois-là."}</li>`;
+    return;
+  }
+  $("log").innerHTML = list.slice(0,300).map(e=>{
+    const p = P[e.who]; if(!p) return "";
+    const when = new Date(e.ts).toLocaleString("fr-FR",{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
+    let what, amt, cls;
+    if(e.type==="transfer"){
+      what = `<b>${esc(p.name)}</b> vire à <b>${esc(P[e.to]?.name||"?")}</b> · ${esc(e.label)}`;
+      amt = "⇄ "+e.amount; cls="";
+    } else {
+      what = `<b>${esc(p.name)}</b> · ${esc(e.label)}${e.qty>1?` × ${e.qty}`:""}`;
+      amt = e.type==="earn" ? "+"+e.amount : "−"+e.amount; cls = e.type==="earn"?"pos":"neg";
+    }
+    const rx = e.reactions||{};
+    const contesters = (rx.conteste||[]).filter(id=>P[id]);
+    const flag = contesters.length ? `<span class="flag">Contesté par ${contesters.map(id=>esc(P[id].name)).join(", ")}</span>` : "";
+    const btns = REACTS.map(([k,emo,lbl])=>{
+      const ids=(rx[k]||[]).filter(id=>P[id]);
+      if(k==="conteste" && me===e.who) return "";
+      const mine = me && ids.includes(me);
+      return `<button data-react="${k}" data-id="${esc(e.id)}" aria-pressed="${!!mine}" title="${lbl}${ids.length?" : "+ids.map(id=>P[id].name).join(", "):""}">${emo}${ids.length?`<span>${ids.length}</span>`:""}</button>`;
+    }).join("");
+    return `<li class="${contesters.length?"contested":""}">${ava(p)}<div class="what">${what}<small>${when}${e.note?` · « ${esc(e.note)} »`:""}</small></div>
+      <span class="amt num ${cls}">${amt}</span><button class="del" data-del="${esc(e.id)}" aria-label="Annuler cette opération" title="Annuler">×</button>
+      <div class="reacts">${btns}${flag}</div></li>`;
+  }).join("");
+}
+
+// ---------- guichet ----------
+function renderWho(){
+  $("who").innerHTML = me ? `<button aria-pressed="true" disabled style="cursor:default">${ava(P[me])}${esc(P[me].name)}</button><button class="linkbtn" data-switch>Ce n'est pas moi</button>` : `<button class="linkbtn" data-switch>Choisir qui je suis</button>`;
+}
+const GOALS = ["terrasse","soiree","paris"];
+function renderMe(){
+  if(!me){ $("meBox").hidden=true; return; }
+  $("meBox").hidden=false;
+  const p=P[me], partner=partnerOf(me), b=balances(), mine=b[me];
+  const sorted=[...PEOPLE].sort((x,y)=>b[y.id]-b[x.id]);
+  const rank=sorted.findIndex(x=>x.id===me)+1;
+  $("meAva").innerHTML=ava(p).replace('class="ava"','class="ava" style="width:56px;height:56px;font-size:1.5rem;background:'+p.color+';color:'+p.ink+'"');
+  const h=new Date().getHours();
+  $("meHello").textContent=(h<5?"Encore debout, ":h<18?"Bonjour ":"Bonsoir ")+p.name;
+  $("meBal").innerHTML=`${fmt(mine)}<span class="chip" style="--s:34px;margin-left:6px"></span>`;
+  $("meBal").className="bal num "+(mine<0?"neg":mine>0?"pos":"");
+  $("meRank").textContent=`${rank===1?"1er":rank+"e"} sur 8 · ${title(mine)}`;
+  const d=mine-b[partner.id];
+  $("meDuel").innerHTML = d===0 ? `À égalité parfaite avec <b>${esc(partner.name)}</b>. Personne ne cède.` :
+    d>0 ? `Vous avez <b class="num">${plural(d,"jeton")}</b> d'avance sur <b>${esc(partner.name)}</b>. Profitez-en, ça ne durera pas.` :
+          `<b>${esc(partner.name)}</b> a <b class="num">${plural(-d,"jeton")}</b> d'avance sur vous. Une nuit de garde, peut-être ?`;
+  const st=monthStats()[me];
+  // série : jours consécutifs avec au moins un gain, jusqu'à aujourd'hui ou hier
+  const days=new Set(entries.filter(e=>e.who===me&&e.type==="earn").map(e=>new Date(e.ts).toDateString()));
+  let streak=0; const c=new Date(); if(!days.has(c.toDateString())) c.setDate(c.getDate()-1);
+  while(days.has(c.toDateString())){ streak++; c.setDate(c.getDate()-1); }
+  $("meStats").innerHTML=`<div><b class="pos">+${st.earn}</b><span>gagnés ce mois</span></div><div><b class="neg">−${st.spend}</b><span>dépensés ce mois</span></div><div><b>${streak}</b><span>jour${streak>1?"s":""} de suite à gagner</span></div>`;
+  $("meGoals").innerHTML=GOALS.map(k=>{
+    const [,l,v]=SPEND.find(x=>x[0]===k);
+    const pct=Math.max(0,Math.min(100,mine/v*100)), miss=v-mine;
+    return `<div class="goal"><span>${esc(l)}</span><b class="num ${miss<=0?"pos":""}">${miss<=0?"C'est payé":"encore "+miss}</b><div class="gauge"><i style="width:${pct}%;background:${miss<=0?"var(--plus)":"var(--chip)"}"></i></div></div>`;
+  }).join("");
+  // raccourcis : mes 4 gains les plus fréquents, sinon les classiques
+  const cnt={}; entries.filter(e=>e.who===me&&e.type==="earn"&&e.key&&e.key!=="custom").forEach(e=>cnt[e.key]=(cnt[e.key]||0)+1);
+  const keys=[...new Set([...Object.keys(cnt).sort((a,z)=>cnt[z]-cnt[a]),"nuit","reveil","couche","dodo"])].filter(k=>EARN.some(x=>x[0]===k)).slice(0,4);
+  $("meShort").innerHTML=keys.map(k=>{const [,l,v]=EARN.find(x=>x[0]===k);return `<button data-short="${k}">${esc(l)} <span class="pos">+${v}</span></button>`}).join("");
+}
+function renderWhoGrid(){
+  $("whoGrid").innerHTML=PEOPLE.map(p=>`<button data-pick="${p.id}">${ava(p)}${esc(p.name)}</button>`).join("");
+}
+function showWho(){ renderWhoGrid(); $("gate").hidden=false; $("gateForm").hidden=true; $("gateWho").hidden=false; }
+function setMe(id){
+  me=id; ls("bdj-me",me); $("simWho").value=me; focus=new Set([me,partnerOf(me).id]);
+  $("gate").hidden=true; renderWho(); renderTab(); renderAll(); window.scrollTo({top:0});
+}
+function renderTab(){
+  document.querySelectorAll("#tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.t===tab));
+  let h = "";
+  if(tab==="transfer"){
+    const others = PEOPLE.filter(p=>p.id!==me);
+    if(!tTo || tTo===me) tTo = me ? partnerOf(me).id : others[0].id;
+    h = `<div class="row">
+      <label class="f">Vers<select id="tTo">${others.map(p=>`<option value="${p.id}" ${p.id===tTo?"selected":""}>${esc(p.name)}${me&&p.id===partnerOf(me).id?" (conjoint)":""}</option>`).join("")}</select></label>
+      <label class="f">Montant<input id="tAmt" type="number" min="1" max="${MAX_TRANSFER}" step="1" inputmode="numeric" value="${tAmt}"></label>
+    </div>
+    <label class="f">Motif<select id="tMotif">${TRANSFER_MOTIFS.map(m=>`<option ${m===tMotif?"selected":""}>${m}</option>`).join("")}</select></label>`;
+  } else {
+    h = `<input id="search" type="search" class="search" autocomplete="off" placeholder="${tab==="earn"?"Chercher un exploit : nuit, couche, crèche…":"Chercher un plaisir : bière, week-end, sieste…"}" value="${esc(query)}" aria-label="Chercher une opération">
+      <div class="acts" id="acts"></div>`;
+    if(pick==="custom"){
+      h += `<div class="row" style="margin-top:12px">
+        <label class="f" style="flex:3 1 200px">Intitulé<input id="cLbl" maxlength="60" placeholder="${tab==="earn"?"Ex. : vomi sur l'épaule, géré avec le sourire":"Ex. : concert à Lyon"}" value="${esc(customLbl)}"></label>
+        <label class="f" style="flex:1 1 90px">Jetons (max ${MAX_CUSTOM})<input id="cAmt" type="number" min="1" max="${MAX_CUSTOM}" step="1" inputmode="numeric" value="${customAmt}"></label></div>
+        <div class="preview" style="margin-top:6px">Plafond de ${MAX_CUSTOM} jetons par opération libre. Au-delà, c'est la commission de surendettement qui tranche.</div>`;
+    }
+    if(pick){
+      h += `<div class="row" style="margin-top:12px;align-items:center">
+        <label class="f" style="flex:0 0 auto">Combien de fois ?
+        <span class="qty"><button data-q="-1" aria-label="Moins">−</button><output id="qOut" class="num">${qty}</output><button data-q="1" aria-label="Plus">+</button></span></label>
+        <label class="f">Commentaire (facultatif)<input id="note" maxlength="80" placeholder="${tab==="earn"?"4 réveils, dont un à 3 h 12":"Promis je rentre tôt"}"></label></div>`;
+    }
+  }
+  $("tabBody").innerHTML = h;
+  if(tab!=="transfer") renderActs();
+  updatePreview();
+}
+function norm(s){ return slug(s).replace(/[^a-z0-9 ]/g," "); }
+function renderActs(){
+  const box = $("acts"); if(!box) return;
+  const list = tab==="earn"?EARN:SPEND;
+  const words = norm(query).split(/\s+/).filter(Boolean);
+  const hits = list.filter(([k,l])=>k==="custom" || words.every(w=>norm(l).includes(w)));
+  const real = hits.filter(x=>x[0]!=="custom");
+  let h = hits.map(([k,l,v])=>`<button class="act ${tab}" data-act="${k}" aria-pressed="${pick===k}">
+      <span class="lbl">${k==="custom"&&words.length&&!real.length?`Créer « ${esc(query.trim())} »`:esc(l)}</span>
+      <span class="price">${k==="custom"?`à fixer, max ${MAX_CUSTOM}`:(tab==="earn"?"+":"−")+v}<span class="chip"></span></span></button>`).join("");
+  if(words.length && !real.length) h = `<p class="preview" style="grid-column:1/-1;margin:0">Rien de tel au catalogue. Déclarez-le en opération libre :</p>` + h;
+  box.innerHTML = h;
+}
+function current(){
+  if(!me) return null;
+  if(tab==="transfer"){
+    const a = Math.floor(+tAmt);
+    if(!(a>0) || a>MAX_TRANSFER || !P[tTo]) return null;
+    return {type:"transfer",key:"transfer",who:me,to:tTo,label:tMotif,qty:1,amount:a};
+  }
+  if(!pick) return null;
+  const it = (tab==="earn"?EARN:SPEND).find(x=>x[0]===pick);
+  let label = it[1], unit = it[2];
+  if(pick==="custom"){
+    label = customLbl.trim(); unit = Math.floor(+customAmt);
+    if(!label || !(unit>0) || unit>MAX_CUSTOM) return null;
+  }
+  return {type:tab,key:pick,who:me,label,unit,qty,amount:unit*qty};
+}
+function updatePreview(){
+  const b = balances(), op = current();
+  $("go").disabled = !op;
+  $("goLbl").textContent = tab==="earn"?"Encaisser":tab==="spend"?"Payer":"Virer";
+  if(!me){ $("preview").innerHTML = "Choisissez d'abord qui déclare."; return; }
+  if(!op){
+    let msg = tab==="transfer"?"Indiquez un montant.":"Choisissez une opération.";
+    if(tab==="transfer" && +tAmt>MAX_TRANSFER) msg = `Virement plafonné à ${MAX_TRANSFER} jetons. La banque a des principes.`;
+    if(pick==="custom") msg = +customAmt>MAX_CUSTOM ? `Doucement : ${MAX_CUSTOM} jetons maximum pour une opération libre.` : "Donnez un intitulé et un montant.";
+    $("preview").innerHTML = msg; return;
+  }
+  const before = b[me];
+  const after = before + (op.type==="earn"?op.amount:-op.amount);
+  let quip = "";
+  if(op.type==="spend" && after<0 && before>=0) quip = " Vous passez dans le rouge. Le banquier fronce les sourcils.";
+  else if(op.type==="spend" && after<-20) quip = " Votre conjoint sera prévenu par courrier recommandé.";
+  else if(op.type==="earn" && op.amount>=6) quip = " Belle prise.";
+  else if(op.type==="transfer" && P[op.to].couple!==P[me].couple) quip = " Virement hors du foyer : ça va jaser au prochain dîner.";
+  $("preview").innerHTML = `Solde de ${esc(P[me].name)} : <b class="num">${fmt(before)}</b> → <b class="num ${after<0?"neg":"pos"}">${fmt(after)}</b>.${quip}`;
+}
+
+function renderSim(){
+  const w = $("simWho").value, k = $("simWhat").value;
+  if(!w||!k) return;
+  const b = balances()[w];
+  const [,label,price] = SPEND.find(x=>x[0]===k);
+  const after = b - price, p = P[w];
+  const pct = Math.max(0,Math.min(100,(b/price)*100));
+  let html;
+  if(after>=0){
+    html = `<div class="big pos">Validé. ${esc(p.name)} peut se l'offrir.</div>
+      <div>${esc(label)} coûte <b class="num">${price}</b> jetons. Il en restera <b class="num">${after}</b> après coup.</div>`;
+  } else {
+    const miss = -after, n3=Math.ceil(miss/3), n2=Math.ceil(miss/2), n4=Math.ceil(miss/4);
+    html = `<div class="big neg">Refusé. Il manque ${plural(miss,"jeton")}.</div>
+      <div>Pour ${esc(label.charAt(0).toLowerCase()+label.slice(1))}, ${esc(p.name)} doit encore placer, au choix :</div>
+      <ul>
+        <li><b class="num">${n3}</b> nuit${n3>1?"s":""} de garde complète${n3>1?"s":""}</li>
+        <li><b class="num">${miss}</b> réveil${miss>1?"s":""} nocturne${miss>1?"s":""}</li>
+        <li><b class="num">${n2}</b> couche${n2>1?"s":""} explosive${n2>1?"s":""}</li>
+        <li>ou <b class="num">${n4}</b> dimanche${n4>1?"s":""} chez les beaux-parents</li>
+      </ul>`;
+  }
+  html += `<div class="gauge"><i style="width:${pct}%;background:${after>=0?"var(--plus)":"var(--chip)"}"></i></div>`;
+  $("verdict").innerHTML = html;
+}
+
+function renderMonthNav(){
+  $("mLbl").textContent = new Date(month.y,month.m,1).toLocaleDateString("fr-FR",{month:"long",year:"numeric"});
+  $("mNext").disabled = isCurrentMonth();
+  const first = entries.length ? entries[entries.length-1].ts : Date.now();
+  const f = new Date(first);
+  $("mPrev").disabled = month.y<f.getFullYear() || (month.y===f.getFullYear() && month.m<=f.getMonth());
+}
+
+function renderMonth(){ renderMonthNav(); renderUne(); renderChart(); renderTrophies(); renderRank(); renderLog(); }
+function renderAll(){ renderMe(); renderAccounts(); renderSim(); updatePreview(); renderMonth(); }
+
+// ---------- stockage ----------
+const API = "https://fjamlwnxsbdwwtavecmd.supabase.co/rest/v1/rpc/";
+const KEY = "sb_publishable_gVEb18h9o9GQ8o_ge8cTVw_Qaa7ACyP";
+let code = ls("bdj-code") || "";
+async function rpc(fn, args){
+  const r = await fetch(API+fn,{method:"POST",headers:{apikey:KEY,"Content-Type":"application/json"},body:JSON.stringify({p_code:code,...args})});
+  const body = r.status===204 ? null : await r.json().catch(()=>null);
+  if(!r.ok){ const err = new Error(body?.message||"http "+r.status); err.code = body?.message==="bad_code" ? "bad_code" : "unavailable"; throw err; }
+  return body;
+}
+function accept(rows){
+  entries = (rows||[]).filter(e=>P[e.who] && (e.type==="earn"||e.type==="spend"||e.type==="transfer") && Number.isFinite(e.amount) && e.amount>0 && Number.isFinite(e.ts));
+  renderAll();
+}
+async function refresh(){
+  try{ accept(await rpc("bdj_list",{})); $("mode").textContent="Coffre partagé : tout le monde voit les mêmes comptes."; $("mode").classList.remove("local"); }
+  catch(err){
+    if(err.code==="bad_code"){ showGate(true); return; }
+    $("mode").textContent="Le coffre ne répond pas. Nouvel essai dans quelques secondes."; $("mode").classList.add("local");
+  }
+}
+async function save(op){
+  const row = await rpc("bdj_add",{p_entry:op});
+  entries.unshift(row); renderAll();
+}
+async function remove(id){
+  await rpc("bdj_delete",{p_id:id});
+  entries = entries.filter(e=>e.id!==id); renderAll();
+}
+async function react(id,k){
+  const e = entries.find(x=>x.id===id); if(!e||!me) return;
+  const rx = await rpc("bdj_react",{p_id:id,p_key:k,p_who:me});
+  if(rx) e.reactions = rx;
+  renderAll();
+}
+function showGate(bad){
+  $("gate").hidden=false; $("gateForm").hidden=false; $("gateWho").hidden=true; $("gateErr").hidden=!bad;
+  setTimeout(()=>$("gateCode").focus(),50);
+}
+
+function toast(msg){
+  const t=$("toast"); t.textContent=msg; t.hidden=false;
+  clearTimeout(toast.t); toast.t=setTimeout(()=>t.hidden=true,4000);
+}
+function writeError(err){
+  return err?.code==="bad_code" ? "Le code du coffre a changé. Entrez le nouveau." :
+         "Le coffre n'a pas répondu. Réessayez dans un instant.";
+}
+
+// ---------- événements ----------
+$("who").addEventListener("click",e=>{
+  if(e.target.closest("[data-switch]")){ showWho(); return; }
+  const b=e.target.closest("[data-who]"); if(!b) return;
+  me=b.dataset.who; ls("bdj-me",me); $("simWho").value=me;
+  focus = new Set([me, partnerOf(me).id]);
+  renderWho(); renderTab(); renderSim(); renderChart(); renderLog();
+});
+$("tabs").addEventListener("click",e=>{
+  const b=e.target.closest("[data-t]"); if(!b) return;
+  tab=b.dataset.t; pick=null; qty=1; query=""; customLbl=""; renderTab();
+});
+$("tabBody").addEventListener("click",e=>{
+  const a=e.target.closest("[data-act]");
+  if(a){
+    pick=a.dataset.act; qty=1;
+    if(pick==="custom" && query.trim() && !customLbl) customLbl = query.trim().slice(0,60);
+    renderTab(); if(pick==="custom") $("cLbl")?.focus(); return;
+  }
+  const q=e.target.closest("[data-q]");
+  if(q){ qty=Math.max(1,Math.min(20,qty+ +q.dataset.q)); $("qOut").textContent=qty; updatePreview(); }
+});
+$("tabBody").addEventListener("input",e=>{
+  const t=e.target;
+  if(t.id==="search"){ query=t.value; renderActs(); return; }
+  if(t.id==="cLbl") customLbl=t.value;
+  if(t.id==="cAmt") customAmt=t.value;
+  if(t.id==="tAmt") tAmt=t.value;
+  if(t.id==="tTo") tTo=t.value;
+  if(t.id==="tMotif") tMotif=t.value;
+  updatePreview();
+});
+$("go").addEventListener("click",async()=>{
+  const op=current(); if(!op) return;
+  const note=$("note")?.value.trim(); if(note) op.note=note;
+  $("go").disabled=true;
+  try{
+    await save(op);
+    const name=P[op.who].name;
+    toast(op.type==="earn"?`${plural(op.amount,"jeton")} encaissé${op.amount>1?"s":""} pour ${name}.`:
+          op.type==="spend"?`${name} dépense ${plural(op.amount,"jeton")}. Profitez bien.`:
+          `${plural(op.amount,"jeton")} viré${op.amount>1?"s":""} à ${P[op.to].name}.`);
+    const c=document.querySelector("#go .chip"); c.classList.remove("pop"); void c.offsetWidth; c.classList.add("pop");
+    pick=null; qty=1; customLbl="";
+    if(!isCurrentMonth()){ month={y:now.getFullYear(),m:now.getMonth()}; }
+    renderTab(); renderMonth();
+  }catch(err){ toast(writeError(err)); updatePreview(); }
+});
+$("log").addEventListener("click",async e=>{
+  const r=e.target.closest("[data-react]");
+  if(r){
+    if(!me){ toast("Choisissez d'abord qui vous êtes, dans le guichet."); return; }
+    try{ await react(r.dataset.id, r.dataset.react); }catch(err){ toast(writeError(err)); }
+    return;
+  }
+  const b=e.target.closest("[data-del]"); if(!b) return;
+  if(b.dataset.armed){ try{ await remove(b.dataset.del); }catch(err){ toast(writeError(err)); } return; }
+  b.dataset.armed="1"; b.textContent="Annuler ?"; b.style.fontSize=".8rem";
+  setTimeout(()=>{ if(b.isConnected){ delete b.dataset.armed; b.textContent="×"; b.style.fontSize=""; } },3000);
+});
+$("simWho").addEventListener("change",renderSim);
+$("simWhat").addEventListener("change",renderSim);
+$("mPrev").addEventListener("click",()=>{ month = month.m===0?{y:month.y-1,m:11}:{y:month.y,m:month.m-1}; renderMonth(); });
+$("mNext").addEventListener("click",()=>{ if(isCurrentMonth()) return; month = month.m===11?{y:month.y+1,m:0}:{y:month.y,m:month.m+1}; renderMonth(); });
+$("rankTabs").addEventListener("click",e=>{ const b=e.target.closest("[data-r]"); if(!b) return; rankMode=b.dataset.r; renderRank(); });
+$("legend").addEventListener("click",e=>{
+  const b=e.target.closest("[data-f]"); if(!b) return;
+  const id=b.dataset.f;
+  if(id==="*") focus.clear();
+  else if(focus.has(id)) focus.delete(id);
+  else focus.add(id);
+  renderChart();
+});
+$("chartbox").addEventListener("pointermove",chartHover);
+$("chartbox").addEventListener("pointerleave",chartLeave);
+
+// ---------- démarrage ----------
+$("simWho").innerHTML = PEOPLE.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join("");
+$("simWhat").innerHTML = SPEND.filter(x=>x[0]!=="custom").map(([k,l,v])=>`<option value="${k}" ${k==="paris"?"selected":""}>${esc(l)} (${v})</option>`).join("");
+if(me) $("simWho").value=me;
+renderWho(); renderTab(); renderAll();
+
+$("gateForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const c = $("gateCode").value.trim().toLowerCase(); if(!c) return;
+  code = c;
+  try{
+    const ok = await rpc("bdj_check",{});
+    if(!ok){ $("gateErr").hidden=false; return; }
+    ls("bdj-code",code); refresh();
+    if(me){ $("gate").hidden=true; } else { showWho(); }
+  }catch(err){ $("gateErr").hidden=false; $("gateErr").textContent="Le coffre ne répond pas. Réessayez."; }
+});
+$("logout").addEventListener("click",()=>{ ls("bdj-code",""); code=""; showGate(false); });
+$("whoGrid").addEventListener("click",e=>{ const b=e.target.closest("[data-pick]"); if(b) setMe(b.dataset.pick); });
+$("meShort").addEventListener("click",e=>{
+  const b=e.target.closest("[data-short]"); if(!b) return;
+  tab="earn"; pick=b.dataset.short; qty=1; query=""; renderTab();
+  $("guichet").scrollIntoView({behavior:"smooth",block:"start"});
+});
+if(!code) showGate(false); else { refresh(); if(!me) showWho(); }
+setInterval(()=>{ if(code && document.visibilityState==="visible") refresh(); },20000);
+document.addEventListener("visibilitychange",()=>{ if(code && document.visibilityState==="visible") refresh(); });
+</script>
+</body>
+</html>
